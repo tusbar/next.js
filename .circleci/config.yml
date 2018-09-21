@@ -93,19 +93,6 @@ jobs:
       - store_test_results:
           path: reports/tests/
 
-  test-examples:
-    <<: *nodejs_container
-    steps:
-      - *attach_workspace
-      - *restore_node_modules
-
-      - run:
-          name: Run tests
-          command: yarn testall examples
-
-      - store_test_results:
-          path: reports/tests/
-
   test-isolated:
     <<: *nodejs_container
     steps:
@@ -149,9 +136,6 @@ workflows:
             - install
 
       - test-integration:
-          requires:
-            - install
-      - test-examples:
           requires:
             - install
       - test-isolated:
