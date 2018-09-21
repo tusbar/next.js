@@ -1,10 +1,114 @@
 version: 2
-jobs:
-  build:
+
+defaults:
+  workspace_root: &workspace_root
+    ~/nextjs
+
+  nodejs_container: &nodejs_container
+    working_directory: *workspace_root
     docker:
       - image: circleci/node:8-browsers
-    working_directory: ~/repo
+
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: *workspace_root
+
+  restore_node_modules: &restore_node_modules
+    restore_cache:
+      name: Restore node_modules cache
+      keys:
+        - v1-nextjs-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+        - v1-nextjs-dependencies-master-{{ checksum "package.json" }}
+        - v1-nextjs-dependencies-master-
+
+jobs:
+  checkout:
+    <<: *nodejs_container
     steps:
       - checkout
-      - run: yarn install
-      - run: yarn test
+
+      - persist_to_workspace:
+          root: *workspace_root
+          paths:
+            - ./
+
+  install:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - restore_cache:
+          name: Restore yarn cache
+          keys:
+            - v1-nextjs-yarn-{{ checksum "package.json" }}
+            - v1-nextjs-yarn-
+
+      - run:
+          name: Install dependencies
+          command: yarn --no-lockfile
+
+      - save_cache:
+          name: Save yarn cache
+          key: v1-nextjs-yarn-{{ checksum "package.json" }}
+          paths:
+            - ~/.cache/yarn
+
+      - save_cache:
+          name: Save node_modules cache
+          key: v1-nextjs-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - node_modules/
+
+      - persist_to_workspace:
+          root: *workspace_root
+          paths:
+            - dist/
+            - test/node_modules/
+
+  quality:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - run:
+          name: Run linter
+          command: yarn lint
+
+      - run:
+          name: Run flow check
+          command: yarn flow
+
+  test:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - run:
+          name: Run tests
+          command: yarn testall
+
+      - store_test_results:
+          path: reports/tests/
+
+
+workflows:
+  version: 2
+
+  push:
+    jobs:
+      - checkout
+
+      - install:
+          requires:
+            - checkout
+
+      - quality:
+          requires:
+            - install
+
+      - test:
+          requires:
+            - install

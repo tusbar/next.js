@@ -17,5 +17,6 @@ pids
 coverage
 
 # test output
+reports
 test/**/out
 .DS_Store
