@@ -32,7 +32,7 @@
     "pretestonly": "taskr pretest",
     "testonly": "cross-env NODE_PATH=test/lib jest",
     "posttestonly": "taskr posttest",
-    "testall": "npm run testonly -- --coverage --forceExit --verbose --bail",
+    "testall": "npm run testonly -- --coverage --forceExit --verbose",
     "pretest": "npm run lint && npm run flow",
     "test": "cross-env npm run testall || npm run testall",
     "coveralls": "nyc --instrument=false --source-map=false report --temp-directory=./coverage --reporter=text-lcov | coveralls",
