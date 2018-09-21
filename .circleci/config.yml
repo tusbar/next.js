@@ -80,7 +80,7 @@ jobs:
           name: Run flow check
           command: yarn flow
 
-  test:
+  test-integration:
     <<: *nodejs_container
     steps:
       - *attach_workspace
@@ -88,7 +88,46 @@ jobs:
 
       - run:
           name: Run tests
-          command: yarn testall
+          command: yarn testall test/integration
+
+      - store_test_results:
+          path: reports/tests/
+
+  test-examples:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - run:
+          name: Run tests
+          command: yarn testall examples
+
+      - store_test_results:
+          path: reports/tests/
+
+  test-isolated:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - run:
+          name: Run tests
+          command: yarn testall test/isolated
+
+      - store_test_results:
+          path: reports/tests/
+
+  test-unit:
+    <<: *nodejs_container
+    steps:
+      - *attach_workspace
+      - *restore_node_modules
+
+      - run:
+          name: Run tests
+          command: yarn testall test/unit
 
       - store_test_results:
           path: reports/tests/
@@ -109,6 +148,15 @@ workflows:
           requires:
             - install
 
-      - test:
+      - test-integration:
+          requires:
+            - install
+      - test-examples:
+          requires:
+            - install
+      - test-isolated:
+          requires:
+            - install
+      - test-unit:
           requires:
             - install
